@@ -1,0 +1,54 @@
+version: '3.7'
+services:
+  certbot:
+    image: certbot/certbot:latest
+    volumes:
+      - ./cloudflare.ini:/opt/certbot/cloudflare.ini
+      - ./certbot.sh:/opt/certbot/certbot.sh
+      - ./certbot.cron:/etc/periodic/monthly/certbot
+      - letsencrypt:/etc/letsencrypt
+      - certbot:/var/lib/letsencrypt
+    restart: always
+    env_file:
+      - nginx.env
+      - certbot.env
+    entrypoint: /opt/certbot/certbot.sh
+  nginx:
+    depends_on:
+      - certbot
+      - php
+    image: nginx:alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/usr/share/nginx/default.conf
+      - ./nginx.sh:/usr/share/nginx/nginx.sh
+      - letsencrypt:/etc/letsencrypt
+      - wordpress:/var/www/html
+      - certbot:/etc/ssl/certs
+    restart: always
+    env_file: nginx.env
+    command: /usr/share/nginx/nginx.sh
+  mysql:
+    image: mysql:latest
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql:/var/lib/mysql
+    restart: always
+    env_file: mysql.env
+    command: '--default-authentication-plugin=mysql_native_password'
+  php:
+    depends_on:
+      - mysql
+    image: wordpress:fpm-alpine
+    volumes:
+      - wordpress:/var/www/html
+    restart: always
+    env_file: wordpress.env
+volumes:
+  letsencrypt:
+  certbot:
+  mysql:
+  wordpress:

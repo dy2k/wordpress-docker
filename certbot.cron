@@ -1,0 +1,3 @@
+#!/bin/sh
+echo Check time: $(date) > /var/log/letsencrypt/renewal.log
+/usr/local/bin/certbot renew > /var/log/letsencrypt/renewal.log 2>&1
